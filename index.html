@@ -83,10 +83,11 @@ window.parent.postMessage({action:"resizeIframe",client_id:CLIENT_ID,iframe_id:i
 }
 function hideWidget(){
 debugLog("HIDE","Hiding widget");
-window.parent.postMessage({action:"resizeIframe",client_id:CLIENT_ID,iframe_id:parseInt(iframeId,10),data:{width:0,height:0}},"*");
-window.parent.postMessage({action:"resizeIframe",client_id:CLIENT_ID,iframe_id:iframeId,data:{width:0,height:0}},"*");
-window.parent.postMessage({action:"resizeIframe",client_id:CLIENT_ID,iframe_id:parseInt(iframeId,10),width:0,height:0},"*");
-window.parent.postMessage({action:"resizeIframe",client_id:CLIENT_ID,iframe_id:iframeId,width:0,height:0},"*");
+document.getElementById("app-content").style.display="none";
+window.parent.postMessage({action:"resizeIframe",client_id:CLIENT_ID,iframe_id:parseInt(iframeId,10),data:{width:1,height:1}},"*");
+window.parent.postMessage({action:"resizeIframe",client_id:CLIENT_ID,iframe_id:iframeId,data:{width:1,height:1}},"*");
+window.parent.postMessage({action:"resizeIframe",client_id:CLIENT_ID,iframe_id:parseInt(iframeId,10),width:1,height:1},"*");
+window.parent.postMessage({action:"resizeIframe",client_id:CLIENT_ID,iframe_id:iframeId,width:1,height:1},"*");
 }
 
 function handlePageContext(u){
