@@ -73,8 +73,21 @@ if(d.data.pageDetails&&d.data.pageDetails.relativeUrl) return d.data.pageDetails
 return null;
 }
 
-function showWidget(){debugLog("SHOW","Showing widget");document.getElementById("app-content").style.display="block";postToParent("resizeIframe",{width:EXPANDED_WIDTH,height:EXPANDED_HEIGHT,initial:false})}
-function hideWidget(){debugLog("HIDE","Hiding widget");postToParent("resizeIframe",{width:0,height:0,initial:false})}
+function showWidget(){
+debugLog("SHOW","Showing widget");
+document.getElementById("app-content").style.display="block";
+window.parent.postMessage({action:"resizeIframe",client_id:CLIENT_ID,iframe_id:parseInt(iframeId,10),data:{width:EXPANDED_WIDTH,height:EXPANDED_HEIGHT}},"*");
+window.parent.postMessage({action:"resizeIframe",client_id:CLIENT_ID,iframe_id:iframeId,data:{width:EXPANDED_WIDTH,height:EXPANDED_HEIGHT}},"*");
+window.parent.postMessage({action:"resizeIframe",client_id:CLIENT_ID,iframe_id:parseInt(iframeId,10),width:EXPANDED_WIDTH,height:EXPANDED_HEIGHT},"*");
+window.parent.postMessage({action:"resizeIframe",client_id:CLIENT_ID,iframe_id:iframeId,width:EXPANDED_WIDTH,height:EXPANDED_HEIGHT},"*");
+}
+function hideWidget(){
+debugLog("HIDE","Hiding widget");
+window.parent.postMessage({action:"resizeIframe",client_id:CLIENT_ID,iframe_id:parseInt(iframeId,10),data:{width:0,height:0}},"*");
+window.parent.postMessage({action:"resizeIframe",client_id:CLIENT_ID,iframe_id:iframeId,data:{width:0,height:0}},"*");
+window.parent.postMessage({action:"resizeIframe",client_id:CLIENT_ID,iframe_id:parseInt(iframeId,10),width:0,height:0},"*");
+window.parent.postMessage({action:"resizeIframe",client_id:CLIENT_ID,iframe_id:iframeId,width:0,height:0},"*");
+}
 
 function handlePageContext(u){
 debugLog("CHECK","URL: "+u);
