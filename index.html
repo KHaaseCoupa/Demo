@@ -33,8 +33,8 @@ var EXPANDED_WIDTH=400;
 var EXPANDED_HEIGHT=520;
 var GR_URL_PATTERN=/\/inventory\/(\d+).*from_page=receipts/;
 var urlParams=new URLSearchParams(window.location.search);
-var iframeId=urlParams.get("floating_iframe_id")||urlParams.get("iframe_id")||"1";
-var coupaHost=urlParams.get("coupahost")||"";
+var rawIframeId=urlParams.get("floating_iframe_id")||urlParams.get("iframe_id")||urlParams.get("id")||"1";
+var iframeId=rawIframeId;
 var currentGrNumber=null;
 var currentPoNumber=null;
 
@@ -43,17 +43,18 @@ function toggleDebug(){var p=document.getElementById("debug-panel");p.style.disp
 
 debugLog("START","Script loaded");
 debugLog("INFO","Client ID: "+CLIENT_ID);
-debugLog("INFO","iFrame ID: "+iframeId);
-debugLog("INFO","Coupa Host: "+coupaHost);
+debugLog("INFO","iFrame ID: "+iframeId+" (type: "+typeof iframeId+")");
+debugLog("INFO","All URL params: "+window.location.search);
 
 function postToParent(a,d){
 debugLog("SEND","Action: "+a);
-window.parent.postMessage({action:a,client_id:CLIENT_ID,iframe_id:parseInt(iframeId,10),data:d||{}},"*");
-window.parent.postMessage({action:a,client_id:CLIENT_ID,iframe_id:iframeId,data:d||{}},"*");
+var msg1={action:a,client_id:CLIENT_ID,iframe_id:iframeId,data:d||{}};
+var msg2={action:a,client_id:CLIENT_ID,iframe_id:parseInt(iframeId,10),data:d||{}};
+var msg3={action:a,clientId:CLIENT_ID,iframeId:iframeId,data:d||{}};
+window.parent.postMessage(msg1,"*");
+window.parent.postMessage(msg2,"*");
+window.parent.postMessage(msg3,"*");
 }
-
-function showWidget(){debugLog("SHOW","Showing widget");document.getElementById("app-content").style.display="block";postToParent("resizeIframe",{width:EXPANDED_WIDTH,height:EXPANDED_HEIGHT,initial:false})}
-function hideWidget(){debugLog("HIDE","Hiding widget");postToParent("resizeIframe",{width:0,height:0,initial:false})}
 
 function extractUrl(msg){
 var d=msg.data||msg.payload||msg;
@@ -72,6 +73,9 @@ if(d.data.pageDetails&&d.data.pageDetails.relativeUrl) return d.data.pageDetails
 return null;
 }
 
+function showWidget(){debugLog("SHOW","Showing widget");document.getElementById("app-content").style.display="block";postToParent("resizeIframe",{width:EXPANDED_WIDTH,height:EXPANDED_HEIGHT,initial:false})}
+function hideWidget(){debugLog("HIDE","Hiding widget");postToParent("resizeIframe",{width:0,height:0,initial:false})}
+
 function handlePageContext(u){
 debugLog("CHECK","URL: "+u);
 var m=u.match(GR_URL_PATTERN);
@@ -89,21 +93,26 @@ hideWidget();
 
 window.addEventListener("message",function(event){
 var raw=event.data;
+if(typeof raw==="string"){debugLog("RECV","String: "+raw.substring(0,200));try{raw=JSON.parse(raw)}catch(e){return}}
 if(!raw||typeof raw!=="object") return;
-debugLog("RECV","Action: "+(raw.action||"none")+" from "+event.origin);
+debugLog("RECV","Action: "+(raw.action||"none")+" Keys: "+Object.keys(raw).join(","));
 var url=extractUrl(raw);
 if(url){
-debugLog("RECV","Found URL: "+url);
+debugLog("RECV","URL found: "+url);
 handlePageContext(url);
 }else{
-debugLog("RECV","No URL extracted");
+debugLog("RECV","No URL. Data: "+JSON.stringify(raw).substring(0,300));
 }
 if(raw.action==="locationGone"){hideWidget()}
 });
 
-debugLog("INIT","Sending init messages...");
+debugLog("INIT","Sending all init messages...");
 postToParent("getPageContext");
 postToParent("initIframe");
+postToParent("getContext");
+postToParent("init");
+postToParent("ready");
+postToParent("listenToDataLocation");
 
 setInterval(function(){postToParent("getPageContext")},3000);
 
