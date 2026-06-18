@@ -89,4 +89,28 @@ hideWidget();
 window.addEventListener("message",function(event){
 var raw=event.data;
 if(!raw||typeof raw!=="object") return;
-debugLog("RECV","Action: "+(raw.action||"none")+" from
+debugLog("RECV","Action: "+(raw.action||"none")+" from "+event.origin);
+var url=extractUrl(raw);
+if(url){
+debugLog("RECV","Found URL: "+url);
+handlePageContext(url);
+}else{
+debugLog("RECV","No URL extracted");
+}
+if(raw.action==="locationGone"){hideWidget()}
+});
+
+debugLog("INIT","Sending init messages...");
+postToParent("getPageContext");
+postToParent("initIframe");
+
+setInterval(function(){postToParent("getPageContext")},3000);
+
+setTimeout(function(){if(!currentGrNumber){debugLog("DEMO","No GR match after 5s - DEMO MODE");currentGrNumber="128560";currentPoNumber="PO-4500032847";updateDisplay()}},5000);
+
+function updateDisplay(){document.getElementById("gr-number").textContent=currentGrNumber||"\u2014";document.getElementById("po-number").textContent=currentPoNumber||"\u2014";var r=document.querySelectorAll(".gr-ref");for(var i=0;i<r.length;i++){r[i].textContent=currentGrNumber||"\u2014"}}
+function startCheck(){var b=document.getElementById("check-btn");var p=document.getElementById("progress");var bar=document.getElementById("progress-bar");b.disabled=true;b.innerHTML='<div class="spinner"></div> Checking...';p.style.display="block";document.getElementById("result-success").style.display="none";document.getElementById("result-error").style.display="none";document.getElementById("reset-link").style.display="none";for(var i=1;i<=4;i++){document.getElementById("step-"+i).className="progress-step";document.getElementById("icon-"+i).className="step-icon pending";document.getElementById("icon-"+i).innerHTML=""}var steps=[{delay:600,step:1,progress:25},{delay:1800,step:2,progress:50},{delay:3200,step:3,progress:75},{delay:4500,step:4,progress:100}];steps.forEach(function(s){setTimeout(function(){document.getElementById("step-"+s.step).className="progress-step active";document.getElementById("icon-"+s.step).className="step-icon active";document.getElementById("icon-"+s.step).innerHTML='<div class="spinner" style="width:12px;height:12px;border-width:2px;"></div>';bar.style.width=(s.progress-15)+"%"},s.delay);setTimeout(function(){document.getElementById("step-"+s.step).className="progress-step done";document.getElementById("icon-"+s.step).className="step-icon done";document.getElementById("icon-"+s.step).innerHTML="\u2713";bar.style.width=s.progress+"%"},s.delay+800)});setTimeout(function(){var f=document.getElementById("demo-fail-toggle").checked;if(f){document.getElementById("result-error").style.display="block"}else{document.getElementById("sap-invoice-success").textContent="51"+String(Math.floor(Math.random()*9000000+1000000));document.getElementById("invoice-amount").textContent="\u20AC "+(Math.floor(Math.random()*50000)+5000).toLocaleString("de-DE")+",00";document.getElementById("posting-date").textContent=new Date(Date.now()-Math.random()*7*86400000).toLocaleDateString("de-DE");document.getElementById("result-success").style.display="block"}document.getElementById("reset-link").style.display="block";b.disabled=false;b.innerHTML="\u26A1 Check Invoice Status in ERP"},5800)}
+function resetCheck(){document.getElementById("progress").style.display="none";document.getElementById("result-success").style.display="none";document.getElementById("result-error").style.display="none";document.getElementById("reset-link").style.display="none";document.getElementById("progress-bar").style.width="0%";for(var i=1;i<=4;i++){document.getElementById("step-"+i).className="progress-step";document.getElementById("icon-"+i).className="step-icon pending";document.getElementById("icon-"+i).innerHTML=""}}
+</script>
+</body>
+</html>
