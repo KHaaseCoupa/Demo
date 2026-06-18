@@ -48,6 +48,7 @@ debugLog("INFO","Coupa Host: "+coupaHost);
 
 function postToParent(a,d){
 debugLog("SEND","Action: "+a);
+window.parent.postMessage({action:a,client_id:CLIENT_ID,iframe_id:parseInt(iframeId,10),data:d||{}},"*");
 window.parent.postMessage({action:a,client_id:CLIENT_ID,iframe_id:iframeId,data:d||{}},"*");
 }
 
