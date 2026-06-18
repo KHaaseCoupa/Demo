@@ -46,14 +46,30 @@ debugLog("INFO","Client ID: "+CLIENT_ID);
 debugLog("INFO","iFrame ID: "+iframeId+" (type: "+typeof iframeId+")");
 debugLog("INFO","All URL params: "+window.location.search);
 
-function postToParent(a,d){
-debugLog("SEND","Action: "+a);
+function sendMsg(a,d){
+var numId=parseInt(iframeId,10);
 var msg1={action:a,client_id:CLIENT_ID,iframe_id:iframeId,data:d||{}};
-var msg2={action:a,client_id:CLIENT_ID,iframe_id:parseInt(iframeId,10),data:d||{}};
+var msg2={action:a,client_id:CLIENT_ID,iframe_id:numId,data:d||{}};
 var msg3={action:a,clientId:CLIENT_ID,iframeId:iframeId,data:d||{}};
 window.parent.postMessage(msg1,"*");
 window.parent.postMessage(msg2,"*");
 window.parent.postMessage(msg3,"*");
+}
+
+function postToParent(a,d){
+debugLog("SEND","Action: "+a);
+sendMsg(a,d);
+}
+
+function doResize(w,h){
+debugLog("RESIZE","w="+w+" h="+h);
+var numId=parseInt(iframeId,10);
+window.parent.postMessage({action:"resizeIframe",client_id:CLIENT_ID,iframe_id:numId,data:{width:w,height:h}},"*");
+window.parent.postMessage({action:"resizeIframe",client_id:CLIENT_ID,iframe_id:iframeId,data:{width:w,height:h}},"*");
+window.parent.postMessage({action:"resizeIframe",client_id:CLIENT_ID,iframe_id:numId,width:w,height:h},"*");
+window.parent.postMessage({action:"resizeIframe",client_id:CLIENT_ID,iframe_id:iframeId,width:w,height:h},"*");
+window.parent.postMessage({action:"resize",client_id:CLIENT_ID,iframe_id:numId,data:{width:w,height:h}},"*");
+window.parent.postMessage({action:"resize",client_id:CLIENT_ID,iframe_id:iframeId,data:{width:w,height:h}},"*");
 }
 
 function extractUrl(msg){
@@ -76,18 +92,13 @@ return null;
 function showWidget(){
 debugLog("SHOW","Showing widget");
 document.getElementById("app-content").style.display="block";
-window.parent.postMessage({action:"resizeIframe",client_id:CLIENT_ID,iframe_id:parseInt(iframeId,10),data:{width:EXPANDED_WIDTH,height:EXPANDED_HEIGHT}},"*");
-window.parent.postMessage({action:"resizeIframe",client_id:CLIENT_ID,iframe_id:iframeId,data:{width:EXPANDED_WIDTH,height:EXPANDED_HEIGHT}},"*");
-window.parent.postMessage({action:"resizeIframe",client_id:CLIENT_ID,iframe_id:parseInt(iframeId,10),width:EXPANDED_WIDTH,height:EXPANDED_HEIGHT},"*");
-window.parent.postMessage({action:"resizeIframe",client_id:CLIENT_ID,iframe_id:iframeId,width:EXPANDED_WIDTH,height:EXPANDED_HEIGHT},"*");
+doResize(EXPANDED_WIDTH,EXPANDED_HEIGHT);
 }
+
 function hideWidget(){
 debugLog("HIDE","Hiding widget");
 document.getElementById("app-content").style.display="none";
-window.parent.postMessage({action:"resizeIframe",client_id:CLIENT_ID,iframe_id:parseInt(iframeId,10),data:{width:1,height:1}},"*");
-window.parent.postMessage({action:"resizeIframe",client_id:CLIENT_ID,iframe_id:iframeId,data:{width:1,height:1}},"*");
-window.parent.postMessage({action:"resizeIframe",client_id:CLIENT_ID,iframe_id:parseInt(iframeId,10),width:1,height:1},"*");
-window.parent.postMessage({action:"resizeIframe",client_id:CLIENT_ID,iframe_id:iframeId,width:1,height:1},"*");
+doResize(1,1);
 }
 
 function handlePageContext(u){
