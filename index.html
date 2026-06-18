@@ -33,8 +33,8 @@ var EXPANDED_WIDTH=400;
 var EXPANDED_HEIGHT=520;
 var GR_URL_PATTERN=/\/inventory\/(\d+).*from_page=receipts/;
 var urlParams=new URLSearchParams(window.location.search);
-var rawIframeId=urlParams.get("floating_iframe_id")||urlParams.get("iframe_id")||urlParams.get("id")||"1";
-var iframeId=rawIframeId;
+var iframeId=urlParams.get("floating_iframe_id")||urlParams.get("iframe_id")||"1";
+var coupaHost=urlParams.get("coupahost")||"";
 var currentGrNumber=null;
 var currentPoNumber=null;
 
@@ -44,57 +44,49 @@ function toggleDebug(){var p=document.getElementById("debug-panel");p.style.disp
 debugLog("START","Script loaded");
 debugLog("INFO","Client ID: "+CLIENT_ID);
 debugLog("INFO","iFrame ID: "+iframeId);
-debugLog("INFO","All URL params: "+window.location.search);
-debugLog("INFO","Full URL: "+window.location.href);
+debugLog("INFO","Coupa Host: "+coupaHost);
 
 function postToParent(a,d){
-debugLog("SEND","Action: "+a,d);
-var msg1={action:a,client_id:CLIENT_ID,iframe_id:iframeId,data:d||{}};
-var msg2={action:a,client_id:CLIENT_ID,iframe_id:parseInt(iframeId,10),data:d||{}};
-var msg3={action:a,clientId:CLIENT_ID,iframeId:iframeId,data:d||{}};
-window.parent.postMessage(msg1,"*");
-window.parent.postMessage(msg2,"*");
-window.parent.postMessage(msg3,"*");
+debugLog("SEND","Action: "+a);
+window.parent.postMessage({action:a,client_id:CLIENT_ID,iframe_id:iframeId,data:d||{}},"*");
 }
 
-function showWidget(){debugLog("SHOW","Showing widget");document.getElementById("app-content").style.display="block";postToParent("resize",{width:EXPANDED_WIDTH,height:EXPANDED_HEIGHT,initial:false});postToParent("resizeIframe",{width:EXPANDED_WIDTH,height:EXPANDED_HEIGHT,initial:false})}
-function hideWidget(){debugLog("HIDE","Hiding widget");postToParent("resize",{width:0,height:0,initial:false});postToParent("resizeIframe",{width:0,height:0,initial:false})}
+function showWidget(){debugLog("SHOW","Showing widget");document.getElementById("app-content").style.display="block";postToParent("resizeIframe",{width:EXPANDED_WIDTH,height:EXPANDED_HEIGHT,initial:false})}
+function hideWidget(){debugLog("HIDE","Hiding widget");postToParent("resizeIframe",{width:0,height:0,initial:false})}
 
-function handlePageContext(u){debugLog("CHECK","URL: "+u);var m=u.match(GR_URL_PATTERN);if(m){currentGrNumber=m[1];currentPoNumber="PO-"+currentGrNumber.slice(0,4);debugLog("MATCH","GR#: "+currentGrNumber);updateDisplay();showWidget()}else{debugLog("NOMATCH","URL does not match GR pattern");hideWidget()}}
+function extractUrl(msg){
+var d=msg.data||msg.payload||msg;
+if(!d||typeof d!=="object") return null;
+if(d.current_url) return d.current_url;
+if(d.currentUrl) return d.currentUrl;
+if(d.url) return d.url;
+if(d.relativeUrl) return d.relativeUrl;
+if(d.pageDetails&&d.pageDetails.relativeUrl) return d.pageDetails.relativeUrl;
+if(d.data&&typeof d.data==="object"){
+if(d.data.current_url) return d.data.current_url;
+if(d.data.relativeUrl) return d.data.relativeUrl;
+if(d.data.url) return d.data.url;
+if(d.data.pageDetails&&d.data.pageDetails.relativeUrl) return d.data.pageDetails.relativeUrl;
+}
+return null;
+}
+
+function handlePageContext(u){
+debugLog("CHECK","URL: "+u);
+var m=u.match(GR_URL_PATTERN);
+if(m){
+currentGrNumber=m[1];
+currentPoNumber="PO-"+currentGrNumber.slice(0,4);
+debugLog("MATCH","GR#: "+currentGrNumber);
+updateDisplay();
+showWidget();
+}else{
+debugLog("NOMATCH","Not a GR page");
+hideWidget();
+}
+}
 
 window.addEventListener("message",function(event){
 var raw=event.data;
-debugLog("RECV","origin="+event.origin+" type="+typeof raw);
-if(typeof raw==="string"){debugLog("RECV","String msg: "+raw.substring(0,200));try{raw=JSON.parse(raw)}catch(e){return}}
-if(!raw||typeof raw!=="object"){return}
-debugLog("RECV","Keys: "+Object.keys(raw).join(", "));
-debugLog("RECV","Full: "+JSON.stringify(raw).substring(0,500));
-var action=raw.action||raw.type||raw.event||raw.method||"";
-if(!action){debugLog("RECV","No action/type/event field found");return}
-debugLog("RECV","Action: "+action);
-var data=raw.data||raw.payload||raw.context||raw.result||raw;
-var url=null;
-if(data&&typeof data==="object"){url=data.current_url||data.currentUrl||data.url||data.page_url||data.location||data.href||data.pageUrl||data.path||data.pathname}
-if(typeof data==="string"&&data.indexOf("/")!==-1){url=data}
-if(url){debugLog("RECV","Found URL: "+url);handlePageContext(url)}else{debugLog("RECV","No URL in message data")}
-if(action==="locationGone"||action==="location_gone"){debugLog("GONE","Hiding");hideWidget()}
-});
-
-debugLog("INIT","Sending all possible init messages...");
-postToParent("getPageContext");
-postToParent("initIframe");
-postToParent("getContext");
-postToParent("init");
-postToParent("ready");
-postToParent("listenToDataLocation");
-
-setInterval(function(){postToParent("getPageContext")},3000);
-
-setTimeout(function(){if(!currentGrNumber){debugLog("DEMO","No response after 4s - DEMO MODE");currentGrNumber="128560";currentPoNumber="PO-4500032847";updateDisplay()}},4000);
-
-function updateDisplay(){document.getElementById("gr-number").textContent=currentGrNumber||"\u2014";document.getElementById("po-number").textContent=currentPoNumber||"\u2014";var r=document.querySelectorAll(".gr-ref");for(var i=0;i<r.length;i++){r[i].textContent=currentGrNumber||"\u2014"}}
-function startCheck(){var b=document.getElementById("check-btn");var p=document.getElementById("progress");var bar=document.getElementById("progress-bar");b.disabled=true;b.innerHTML='<div class="spinner"></div> Checking...';p.style.display="block";document.getElementById("result-success").style.display="none";document.getElementById("result-error").style.display="none";document.getElementById("reset-link").style.display="none";for(var i=1;i<=4;i++){document.getElementById("step-"+i).className="progress-step";document.getElementById("icon-"+i).className="step-icon pending";document.getElementById("icon-"+i).innerHTML=""}var steps=[{delay:600,step:1,progress:25},{delay:1800,step:2,progress:50},{delay:3200,step:3,progress:75},{delay:4500,step:4,progress:100}];steps.forEach(function(s){setTimeout(function(){document.getElementById("step-"+s.step).className="progress-step active";document.getElementById("icon-"+s.step).className="step-icon active";document.getElementById("icon-"+s.step).innerHTML='<div class="spinner" style="width:12px;height:12px;border-width:2px;"></div>';bar.style.width=(s.progress-15)+"%"},s.delay);setTimeout(function(){document.getElementById("step-"+s.step).className="progress-step done";document.getElementById("icon-"+s.step).className="step-icon done";document.getElementById("icon-"+s.step).innerHTML="\u2713";bar.style.width=s.progress+"%"},s.delay+800)});setTimeout(function(){var f=document.getElementById("demo-fail-toggle").checked;if(f){document.getElementById("result-error").style.display="block"}else{document.getElementById("sap-invoice-success").textContent="51"+String(Math.floor(Math.random()*9000000+1000000));document.getElementById("invoice-amount").textContent="\u20AC "+(Math.floor(Math.random()*50000)+5000).toLocaleString("de-DE")+",00";document.getElementById("posting-date").textContent=new Date(Date.now()-Math.random()*7*86400000).toLocaleDateString("de-DE");document.getElementById("result-success").style.display="block"}document.getElementById("reset-link").style.display="block";b.disabled=false;b.innerHTML="\u26A1 Check Invoice Status in ERP"},5800)}
-function resetCheck(){document.getElementById("progress").style.display="none";document.getElementById("result-success").style.display="none";document.getElementById("result-error").style.display="none";document.getElementById("reset-link").style.display="none";document.getElementById("progress-bar").style.width="0%";for(var i=1;i<=4;i++){document.getElementById("step-"+i).className="progress-step";document.getElementById("icon-"+i).className="step-icon pending";document.getElementById("icon-"+i).innerHTML=""}}
-</script>
-</body>
-</html>
+if(!raw||typeof raw!=="object") return;
+debugLog("RECV","Action: "+(raw.action||"none")+" from
