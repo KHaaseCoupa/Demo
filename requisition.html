@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Requisition Assistant</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#fff;color:#333;font-size:14px;height:100vh;display:flex;flex-direction:column}
+.header{background:linear-gradient(135deg,#6554C0,#8777D9);color:#fff;padding:14px 16px;display:flex;align-items:center;gap:10px;flex-shrink:0}
+.header-icon{font-size:20px}
+.header h1{font-size:15px;font-weight:600}
+.header-subtitle{font-size:11px;opacity:.8;margin-top:2px}
+.context-bar{background:#F4F5F7;padding:8px 16px;display:flex;align-items:center;gap:8px;border-bottom:1px solid #E2E4E9;flex-shrink:0}
+.context-badge{background:#6554C0;color:#fff;font-size:10px;font-weight:700;padding:3px 8px;border-radius:10px}
+.context-text{font-size:12px;color:#6B778C}
+.context-value{font-weight:600;color:#172B4D}
+.chat-area{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px}
+.msg{max-width:85%;padding:10px 14px;border-radius:12px;font-size:13px;line-height:1.5;animation:fadeIn .3s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.msg.bot{background:#F4F5F7;color:#172B4D;align-self:flex-start;border-bottom-left-radius:4px}
+.msg.user{background:#6554C0;color:#fff;align-self:flex-end;border-bottom-right-radius:4px}
+.msg.bot .msg-label{font-size:10px;color:#6B778C;margin-bottom:4px;font-weight:600}
+.msg.bot table{width:100%;border-collapse:collapse;margin:8px 0;font-size:12px}
+.msg.bot table td{padding:4px 0;border-bottom:1px solid #E2E4E9}
+.msg.bot table td:first-child{color:#6B778C;width:40%}
+.msg.bot table td:last-child{font-weight:600;color:#172B4D;text-align:right}
+.msg.bot .status-pill{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600}
+.status-draft{background:#DFE1E6;color:#42526E}
+.status-pending{background:#FFF0B3;color:#7F5F01}
+.status-approved{background:#E3FCEF;color:#006644}
+.status-denied{background:#FFEBE6;color:#BF2600}
+.status-ordered{background:#DEEBFF;color:#0747A6}
+.quick-actions{display:flex;flex-wrap:wrap;gap:6px;padding:8px 16px;border-top:1px solid #E2E4E9;flex-shrink:0}
+.quick-btn{background:#F4F5F7;border:1px solid #DFE1E6;border-radius:16px;padding:6px 12px;font-size:11px;color:#42526E;cursor:pointer;transition:all .2s;white-space:nowrap}
+.quick-btn:hover{background:#DEEBFF;border-color:#B3D4FF;color:#0052CC}
+.input-area{display:flex;gap:8px;padding:12px 16px;border-top:1px solid #E2E4E9;background:#fff;flex-shrink:0}
+.input-area input{flex:1;padding:10px 14px;border:1px solid #DFE1E6;border-radius:20px;font-size:13px;outline:none;transition:border .2s}
+.input-area input:focus{border-color:#6554C0}
+.input-area button{background:#6554C0;color:#fff;border:none;border-radius:50%;width:36px;height:36px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;transition:background .2s;flex-shrink:0}
+.input-area button:hover{background:#5243AA}
+.typing{display:flex;gap:4px;padding:8px 14px;align-self:flex-start}
+.typing span{width:6px;height:6px;background:#B3BAC5;border-radius:50%;animation:bounce .6s infinite alternate}
+.typing span:nth-child(2){animation-delay:.2s}
+.typing span:nth-child(3){animation-delay:.4s}
+@keyframes bounce{to{transform:translateY(-6px);background:#6554C0}}
+.debug-toggle{text-align:right;padding:4px 16px;flex-shrink:0}
+.debug-toggle a{font-size:10px;color:#6B778C;cursor:pointer;text-decoration:none}
+.debug-panel{padding:8px 16px;background:#1a1a2e;font-family:'Courier New',monospace;font-size:10px;color:#0f0;max-height:150px;overflow-y:auto;flex-shrink:0}
+.debug-panel .log-line{padding:1px 0;border-bottom:1px solid #2a2a4a}
+</style>
+</head>
+<body>
+<div class="header"><div class="header-icon">&#129302;</div><div><h1>Requisition Assistant</h1><div class="header-subtitle">Coupa Procurement AI Copilot</div></div></div>
+<div class="context-bar"><span class="context-badge" id="ctx-badge">REQ</span><span class="context-text">Requisition <span class="context-value" id="ctx-req-id">&mdash;</span></span><span class="context-text" style="margin-left:auto">Status: <span class="context-value" id="ctx-status">&mdash;</span></span></div>
+<div class="chat-area" id="chat-area"></div>
+<div class="quick-actions" id="quick-actions">
+<button class="quick-btn" onclick="askQuestion('status')">&#128203; Req Status</button>
+<button class="quick-btn" onclick="askQuestion('approval')">&#9989; Approval Chain</button>
+<button class="quick-btn" onclick="askQuestion('budget')">&#128176; Budget Check</button>
+<button class="quick-btn" onclick="askQuestion('lines')">&#128230; Line Items</button>
+<button class="quick-btn" onclick="askQuestion('supplier')">&#127970; Supplier Info</button>
+<button class="quick-btn" onclick="askQuestion('po')">&#128196; PO Status</button>
+<button class="quick-btn" onclick="askQuestion('policy')">&#128220; Policy Violations</button>
+<button class="quick-btn" onclick="askQuestion('history')">&#128337; Change History</button>
+</div>
+<div class="input-area"><input type="text" id="user-input" placeholder="Ask about this requisition..." onkeydown="if(event.key==='Enter')sendMessage()"><button onclick="sendMessage()">&#10148;</button></div>
+<div class="debug-toggle"><a onclick="toggleDebug()">Toggle Debug Console</a></div>
+<div class="debug-panel" id="debug-panel" style="display:none;"></div>
+<script>
+var CLIENT_ID="809b4413ccd011b2a4c1b43e065bd77b";
+var REQ_URL_PATTERN=/\/requisitions\/(\d+)/;
+var urlParams=new URLSearchParams(window.location.search);
+var rawIframeId=urlParams.get("floating_iframe_id")||urlParams.get("iframe_id")||urlParams.get("id")||"1";
+var iframeId=rawIframeId;
+var currentReqId=null;
+
+/* ── Mock Data ── */
+var MOCK_DATA={
+"128400":{id:"REQ-128400",title:"Office Supplies Q3",status:"Pending Approval",requestor:"Kevin Haase",department:"Value Services",created:"2026-06-28",total:"€ 2.340,00",currency:"EUR",approvers:[{name:"Lisa Müller",status:"Approved",date:"2026-06-29"},{name:"Thomas Weber",status:"Pending",date:"—"},{name:"Sandra Koch",status:"Waiting",date:"—"}],lines:[{num:1,desc:"Ergonomic Keyboard (DE Layout)",qty:15,price:"€ 89,00",supplier:"Logitech GmbH",commodity:"IT Peripherals"},{num:2,desc:"USB-C Docking Station",qty:10,price:"€ 149,00",supplier:"Dell Technologies",commodity:"IT Equipment"},{num:3,desc:"Monitor Stand Adjustable",qty:15,price:"€ 45,00",supplier:"Fellowes GmbH",commodity:"Office Furniture"}],budget:{allocated:"€ 5.000,00",spent:"€ 1.890,00",thisReq:"€ 2.340,00",remaining:"€ 770,00",percent:85},po:null,policy:[],history:[{date:"2026-06-28 09:15",user:"Kevin Haase",action:"Created requisition"},{date:"2026-06-28 09:16",user:"Kevin Haase",action:"Submitted for approval"},{date:"2026-06-29 11:30",user:"Lisa Müller",action:"Approved (Level 1)"}]},
+"default":{id:"REQ-XXXXX",title:"Purchase Request",status:"Draft",requestor:"Kevin Haase",department:"Value Services",created:"2026-07-01",total:"€ 1.250,00",currency:"EUR",approvers:[{name:"Lisa Müller",status:"Pending",date:"—"},{name:"Thomas Weber",status:"Waiting",date:"—"}],lines:[{num:1,desc:"Software License - Annual",qty:5,price:"€ 250,00",supplier:"SAP SE",commodity:"Software"}],budget:{allocated:"€ 10.000,00",spent:"€ 4.200,00",thisReq:"€ 1.250,00",remaining:"€ 4.550,00",percent:55},po:null,policy:[{type:"Warning",msg:"Supplier not on preferred list"}],history:[{date:"2026-07-01 10:00",user:"Kevin Haase",action:"Created requisition"}]}
+};
+
+function getReqData(){
+var d=MOCK_DATA[currentReqId]||MOCK_DATA["default"];
+if(!MOCK_DATA[currentReqId]){d=JSON.parse(JSON.stringify(d));d.id="REQ-"+currentReqId}
+return d;
+}
+
+/* ── Debug ── */
+function debugLog(e,m){console.log(e+" "+m);var p=document.getElementById("debug-panel");if(p){var l=document.createElement("div");l.className="log-line";l.textContent=new Date().toLocaleTimeString()+" "+e+" "+m;p.appendChild(l);p.scrollTop=p.scrollHeight}}
+function toggleDebug(){var p=document.getElementById("debug-panel");p.style.display=p.style.display==="none"?"block":"none"}
+
+/* ── Messaging ── */
+function sendMsg(a,d){
+var numId=parseInt(iframeId,10);
+window.parent.postMessage({action:a,client_id:CLIENT_ID,iframe_id:iframeId,data:d||{}},"*");
+window.parent.postMessage({action:a,client_id:CLIENT_ID,iframe_id:numId,data:d||{}},"*");
+window.parent.postMessage({action:a,clientId:CLIENT_ID,iframeId:iframeId,data:d||{}},"*");
+}
+function postToParent(a,d){debugLog("SEND","Action: "+a);sendMsg(a,d)}
+function doResize(w,h){
+debugLog("RESIZE","w="+w+" h="+h);
+var numId=parseInt(iframeId,10);
+window.parent.postMessage({action:"resizeIframe",client_id:CLIENT_ID,iframe_id:numId,data:{width:w,height:h}},"*");
+window.parent.postMessage({action:"resizeIframe",client_id:CLIENT_ID,iframe_id:iframeId,data:{width:w,height:h}},"*");
+window.parent.postMessage({action:"resizeIframe",client_id:CLIENT_ID,iframe_id:numId,width:w,height:h},"*");
+window.parent.postMessage({action:"resizeIframe",client_id:CLIENT_ID,iframe_id:iframeId,width:w,height:h},"*");
+window.parent.postMessage({action:"resize",client_id:CLIENT_ID,iframe_id:numId,data:{width:w,height:h}},"*");
+window.parent.postMessage({action:"resize",client_id:CLIENT_ID,iframe_id:iframeId,data:{width:w,height:h}},"*");
+}
+
+function extractUrl(msg){
+var d=msg.data||msg.payload||msg;
+if(!d||typeof d!=="object") return null;
+if(d.current_url) return d.current_url;
+if(d.currentUrl) return d.currentUrl;
+if(d.url) return d.url;
+if(d.relativeUrl) return d.relativeUrl;
+if(d.pageDetails&&d.pageDetails.relativeUrl) return d.pageDetails.relativeUrl;
+if(d.data&&typeof d.data==="object"){
+if(d.data.current_url) return d.data.current_url;
+if(d.data.relativeUrl) return d.data.relativeUrl;
+if(d.data.url) return d.data.url;
+if(d.data.pageDetails&&d.data.pageDetails.relativeUrl) return d.data.pageDetails.relativeUrl;
+}
+return null;
+}
+
+/* ── Chat UI ── */
+function addMsg(text,type){
+var c=document.getElementById("chat-area");
+var d=document.createElement("div");
+d.className="msg "+type;
+d.innerHTML=text;
+c.appendChild(d);
+c.scrollTop=c.scrollHeight;
+}
+function showTyping(){
+var c=document.getElementById("chat-area");
+var d=document.createElement("div");
+d.className="typing";d.id="typing-indicator";
+d.innerHTML="<span></span><span></span><span></span>";
+c.appendChild(d);c.scrollTop=c.scrollHeight;
+}
+function hideTyping(){var t=document.getElementById("typing-indicator");if(t)t.remove()}
+
+function sendMessage(){
+var input=document.getElementById("user-input");
+var text=input.value.trim();
+if(!text) return;
+addMsg(text,"user");
+input.value="";
+processQuery(text);
+}
+
+function askQuestion(type){
+var labels={status:"What's the status of this requisition?",approval:"Show me the approval chain",budget:"How does this look against the budget?",lines:"What are the line items?",supplier:"Which suppliers are on this req?",po:"Is there a PO for this?",policy:"Any policy violations?",history:"Show me the change history"};
+var q=labels[type]||type;
+addMsg(q,"user");
+processQuery(q,type);
+}
+
+/* ── Query Processing ── */
+function processQuery(text,type){
+showTyping();
+var delay=800+Math.random()*1200;
+setTimeout(function(){
+hideTyping();
+if(!currentReqId){addMsg('<div class="msg-label">&#129302; Assistant</div>I\'m not currently on a requisition page. Navigate to a requisition in Coupa and I\'ll pick up the context automatically.',"bot");return}
+var data=getReqData();
+if(!type) type=detectIntent(text);
+var response=generateResponse(type,data);
+addMsg('<div class="msg-label">&#129302; Assistant</div>'+response,"bot");
+},delay);
+}
+
+function detectIntent(text){
+var t=text.toLowerCase();
+if(t.match(/status|stand|wo steht|state/)) return "status";
+if(t.match(/approv|genehm|freigab|chain|kette/)) return "approval";
+if(t.match(/budget|kost|spend|ausgab/)) return "budget";
+if(t.match(/line|position|item|artikel/)) return "lines";
+if(t.match(/supplier|lieferant|vendor/)) return "supplier";
+if(t.match(/po|purchase order|bestellung|order/)) return "po";
+if(t.match(/polic|violat|compliance|richtlin|verstoß/)) return "policy";
+if(t.match(/histor|change|änderung|log|verlauf/)) return "history";
+if(t.match(/total|summe|amount|betrag/)) return "total";
+if(t.match(/help|hilfe|was kannst/)) return "help";
+return "general";
+}
+
+function generateResponse(type,d){
+switch(type){
+case "status":
+var sc=d.status==="Pending Approval"?"status-pending":d.status==="Approved"?"status-approved":d.status==="Denied"?"status-denied":d.status==="Ordered"?"status-ordered":"status-draft";
+return '<table><td>Requisition</td><td>'+d.id+'</td></tr><tr><td>Title</td><td>'+d.title+'</td></tr><tr><td>Status</td><td><span class="status-pill '+sc+'">'+d.status+'</span></td></tr><tr><td>Requestor</td><td>'+d.requestor+'</td></tr><tr><td>Department</td><td>'+d.department+'</td></tr><tr><td>Created</td><td>'+d.created+'</td></tr><tr><td>Total</td><td><strong>'+d.total+'</strong></td></tr></table>';
+
+case "approval":
+var html='<strong>Approval Chain for '+d.id+'</strong><br><br>';
+d.approvers.forEach(function(a,i){
+var icon=a.status==="Approved"?"&#9989;":a.status==="Pending"?"&#9203;":"&#9898;";
+var sc=a.status==="Approved"?"status-approved":a.status==="Pending"?"status-pending":"status-draft";
+html+='<div style="display:flex;align-items:center;gap:8px;padding:4px 0">'+icon+' <strong>'+a.name+'</strong> <span class="status-pill '+sc+'">'+a.status+'</span> <span style="color:#6B778C;font-size:11px;margin-left:auto">'+a.date+'</span></div>';
+});
+return html;
+
+case "budget":
+var pct=d.budget.percent;
+var barColor=pct>90?"#DE350B":pct>70?"#FF8B00":"#00875A";
+return '<strong>Budget Analysis</strong><table><tr><td>Allocated</td><td>'+d.budget.allocated+'</td></tr><tr><td>Already Spent</td><td>'+d.budget.spent+'</td></tr><tr><td>This Requisition</td><td>'+d.budget.thisReq+'</td></tr><tr><td>Remaining After</td><td>'+d.budget.remaining+'</td></tr></table><div style="margin-top:8px"><div style="height:8px;background:#DFE1E6;border-radius:4px;overflow:hidden"><div style="height:100%;width:'+pct+'%;background:'+barColor+';border-radius:4px"></div></div><div style="text-align:right;font-size:11px;color:'+barColor+';margin-top:4px;font-weight:600">'+pct+'% utilized</div></div>'+(pct>85?'<div style="margin-top:8px;padding:8px;background:#FFEBE6;border-radius:6px;font-size:12px;color:#BF2600">&#9888;&#65039; Budget utilization is high. Consider reviewing with your budget owner before approval.</div>':'');
+
+case "lines":
+var html='<strong>'+d.lines.length+' Line Item'+(d.lines.length>1?"s":"")+'</strong><br>';
+d.lines.forEach(function(l){
+html+='<div style="background:#fff;border:1px solid #E2E4E9;border-radius:6px;padding:8px;margin:6px 0"><div style="font-weight:600;font-size:12px">Line '+l.num+': '+l.desc+'</div><table><tr><td>Qty</td><td>'+l.qty+'</td></tr><tr><td>Unit Price</td><td>'+l.price+'</td></tr><tr><td>Supplier</td><td>'+l.supplier+'</td></tr><tr><td>Commodity</td><td>'+l.commodity+'</td></tr></table></div>';
+});
+return html;
+
+case "supplier":
+var suppliers={};
+d.lines.forEach(function(l){suppliers[l.supplier]=suppliers[l.supplier]||[];suppliers[l.supplier].push(l)});
+var html='<strong>Suppliers on '+d.id+'</strong><br>';
+Object.keys(suppliers).forEach(function(s){
+html+='<div style="margin:6px 0;padding:8px;background:#fff;border:1px solid #E2E4E9;border-radius:6px"><div style="font-weight:600">&#127970; '+s+'</div><div style="font-size:11px;color:#6B778C">'+suppliers[s].length+' line item'+(suppliers[s].length>1?"s":"")+'</div></div>';
+});
+return html;
+
+case "po":
+if(d.po){return '<strong>Purchase Order</strong><table><tr><td>PO Number</td><td>'+d.po.number+'</td></tr><tr><td>Status</td><td>'+d.po.status+'</td></tr><tr><td>Created</td><td>'+d.po.date+'</td></tr></table>'}
+return '&#128196; No Purchase Order has been generated yet for <strong>'+d.id+'</strong>.<br><br>A PO will be created automatically once all approvals are complete'+(d.status==="Pending Approval"?'. Currently waiting for <strong>'+d.approvers.filter(function(a){return a.status==="Pending"})[0].name+'</strong> to approve.':d.status==="Draft"?'. The requisition needs to be submitted for approval first.':'.')+'.';
+
+case "policy":
+if(d.policy.length===0) return '&#9989; <strong>No policy violations</strong> detected on '+d.id+'. Everything looks compliant!';
+var html='&#9888;&#65039; <strong>'+d.policy.length+' Policy Issue'+(d.policy.length>1?"s":"")+'</strong><br>';
+d.policy.forEach(function(p){
+html+='<div style="margin:6px 0;padding:8px;background:#FFFAE6;border:1px solid #FFE380;border-radius:6px;font-size:12px"><strong>'+p.type+':</strong> '+p.msg+'</div>';
+});
+return html;
+
+case "history":
+var html='<strong>Change History</strong><br>';
+d.history.forEach(function(h){
+html+='<div style="display:flex;gap:8px;padding:4px 0;border-bottom:1px solid #F4F5F7;font-size:12px"><span style="color:#6B778C;white-space:nowrap;min-width:110px">'+h.date+'</span><span><strong>'+h.user+'</strong> '+h.action+'</span></div>';
+});
+return html;
+
+case "total":
+return '<strong>Financial Summary</strong><table><tr><td>Subtotal</td><td>'+d.total+'</td></tr><tr><td>Currency</td><td>'+d.currency+'</td></tr><tr><td>Lines</td><td>'+d.lines.length+'</td></tr></table>';
+
+case "help":
+return 'I can help you with:<br><br>&#128203; <strong>Status</strong> — Current requisition state<br>&#9989; <strong>Approvals</strong> — Who needs to approve & progress<br>&#128176; <strong>Budget</strong> — Budget impact analysis<br>&#128230; <strong>Line Items</strong> — What\'s being ordered<br>&#127970; <strong>Suppliers</strong> — Vendor details<br>&#128196; <strong>PO Status</strong> — Purchase order tracking<br>&#128220; <strong>Policy</strong> — Compliance check<br>&#128337; <strong>History</strong> — Change log<br><br>Just ask in English or German!';
+
+default:
+return 'I understand you\'re asking about <strong>'+d.id+'</strong>. Here\'s a quick overview:<br><br>Status: <span class="status-pill status-pending">'+d.status+'</span><br>Total: <strong>'+d.total+'</strong><br>Lines: '+d.lines.length+'<br><br>Try one of the quick action buttons below, or ask me something specific like <em>"Who still needs to approve?"</em> or <em>"Wie sieht das Budget aus?"</em>';
+}
+}
+
+/* ── Page Context ── */
+function handlePageContext(u){
+debugLog("CHECK","URL: "+u);
+var m=u.match(REQ_URL_PATTERN);
+if(m){
+currentReqId=m[1];
+debugLog("MATCH","REQ#: "+currentReqId);
+var data=getReqData();
+document.getElementById("ctx-req-id").textContent=data.id;
+document.getElementById("ctx-status").textContent=data.status;
+doResize(420,600);
+}else{
+debugLog("NOMATCH","Not a requisition page");
+doResize(1,1);
+}
+}
+
+window.addEventListener("message",function(event){
+var raw=event.data;
+if(typeof raw==="string"){try{raw=JSON.parse(raw)}catch(e){return}}
+if(!raw||typeof raw!=="object") return;
+debugLog("RECV","Action: "+(raw.action||"none"));
+var url=extractUrl(raw);
+if(url){debugLog("RECV","URL: "+url);handlePageContext(url)}
+if(raw.action==="locationGone"){doResize(1,1)}
+});
+
+debugLog("INIT","Starting Requisition Assistant...");
+postToParent("getPageContext");
+postToParent("initIframe");
+postToParent("getContext");
+postToParent("init");
+postToParent("ready");
+setInterval(function(){postToParent("getPageContext")},3000);
+
+/* ── Demo Fallback ── */
+setTimeout(function(){
+if(!currentReqId){
+debugLog("DEMO","No req match after 5s - DEMO MODE");
+currentReqId="128400";
+var data=getReqData();
+document.getElementById("ctx-req-id").textContent=data.id;
+document.getElementById("ctx-status").textContent=data.status;
+addMsg('<div class="msg-label">&#129302; Assistant</div>Hi Kevin! &#128075; I\'m your Requisition Assistant for <strong>'+data.id+'</strong> — "'+data.title+'".<br><br>Current status: <span class="status-pill status-pending">'+data.status+'</span><br>Total: <strong>'+data.total+'</strong><br><br>What would you like to know? Use the quick buttons or just ask me anything!',"bot");
+}
+},5000);
+</script>
+</body>
+</html>
