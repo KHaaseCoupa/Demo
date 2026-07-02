@@ -81,6 +81,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .status-approved{background:#E3FCEF;color:#006644}
 .status-denied{background:#FFEBE6;color:#BF2600}
 .status-ordered{background:#DEEBFF;color:#0747A6}
+.status-received{background:#E3FCEF;color:#006644}
+.status-buyer{background:#FFF0B3;color:#7F5F01}
 .quick-actions{display:flex;flex-wrap:wrap;gap:6px;padding:8px 16px;border-top:1px solid #E2E4E9;flex-shrink:0}
 .quick-btn{background:#F4F5F7;border:1px solid #DFE1E6;border-radius:16px;padding:6px 12px;font-size:11px;color:#42526E;cursor:pointer;transition:all .2s;white-space:nowrap}
 .quick-btn:hover{background:#DEEBFF;border-color:#B3D4FF;color:#0052CC}
@@ -319,27 +321,113 @@ for(var i=1;i<=4;i++){document.getElementById("step-"+i).className="progress-ste
 }
 
 /* ══════════════════════════════════════════════
-   REQUISITION WIDGET LOGIC
+   REQUISITION WIDGET — REAL DATA
    ══════════════════════════════════════════════ */
 var MOCK_DATA={
-"48903":{id:"REQ-48903",title:"Office Supplies Q3",status:"Pending Approval",requestor:"Kevin Haase",department:"Value Services",created:"2026-06-28",total:"\u20AC 2.340,00",currency:"EUR",
-approvers:[{name:"Lisa Mueller",status:"Approved",date:"2026-06-29"},{name:"Thomas Weber",status:"Pending",date:"\u2014"},{name:"Sandra Koch",status:"Waiting",date:"\u2014"}],
-lines:[{num:1,desc:"Ergonomic Keyboard (DE Layout)",qty:15,price:"\u20AC 89,00",supplier:"Logitech GmbH",commodity:"IT Peripherals"},{num:2,desc:"USB-C Docking Station",qty:10,price:"\u20AC 149,00",supplier:"Dell Technologies",commodity:"IT Equipment"},{num:3,desc:"Monitor Stand Adjustable",qty:15,price:"\u20AC 45,00",supplier:"Fellowes GmbH",commodity:"Office Furniture"}],
-budget:{allocated:"\u20AC 5.000,00",spent:"\u20AC 1.890,00",thisReq:"\u20AC 2.340,00",remaining:"\u20AC 770,00",percent:85},
-po:null,policy:[],
-history:[{date:"2026-06-28 09:15",user:"Kevin Haase",action:"Created requisition"},{date:"2026-06-28 09:16",user:"Kevin Haase",action:"Submitted for approval"},{date:"2026-06-29 11:30",user:"Lisa Mueller",action:"Approved (Level 1)"}]},
-"default":{id:"REQ-XXXXX",title:"Purchase Request",status:"Draft",requestor:"Kevin Haase",department:"Value Services",created:"2026-07-01",total:"\u20AC 1.250,00",currency:"EUR",
-approvers:[{name:"Lisa Mueller",status:"Pending",date:"\u2014"},{name:"Thomas Weber",status:"Waiting",date:"\u2014"}],
-lines:[{num:1,desc:"Software License - Annual",qty:5,price:"\u20AC 250,00",supplier:"SAP SE",commodity:"Software"}],
-budget:{allocated:"\u20AC 10.000,00",spent:"\u20AC 4.200,00",thisReq:"\u20AC 1.250,00",remaining:"\u20AC 4.550,00",percent:55},
-po:null,policy:[{type:"Warning",msg:"Supplier not on preferred list"}],
-history:[{date:"2026-07-01 10:00",user:"Kevin Haase",action:"Created requisition"}]}
+"48900":{
+  id:"REQ-48900",
+  title:"IT Equipment Order",
+  status:"Pending Approval",
+  requestor:"Sam Gold",
+  submitted:"06/30/2026",
+  total:"$803.68",
+  currency:"USD",
+  approvers:[
+    {name:"Sam Gold",role:"Requestor",status:"Approved",date:"06/30/2026"},
+    {name:"Kevin Haase",role:"Approver",status:"Pending",date:"\u2014"},
+    {name:"Commodity Approver",role:"Commodity",status:"Waiting",date:"\u2014"},
+    {name:"Alain Jeanneau",role:"Final Approver",status:"Waiting",date:"\u2014"}
+  ],
+  lines:[
+    {num:1,desc:"Apple Pencil",qty:1,price:"$120.00",total:"$120.00",supplier:"CDW (USA)",commodity:"IT Peripherals"},
+    {num:2,desc:'10.5" iPad Pro 256GB',qty:1,price:"$795.01",total:"$795.01",supplier:"Apple (USA)",commodity:"IT Equipment"}
+  ],
+  budget:{allocated:"$5,000.00",spent:"$2,196.32",thisReq:"$803.68",remaining:"$2,000.00",percent:60},
+  po:null,
+  policy:[],
+  history:[
+    {date:"06/30/2026 08:45",user:"Sam Gold",action:"Created requisition"},
+    {date:"06/30/2026 08:46",user:"Sam Gold",action:"Submitted for approval"},
+    {date:"06/30/2026 08:46",user:"Sam Gold",action:"Auto-approved (Requestor level)"}
+  ]
+},
+"48889":{
+  id:"REQ-48889",
+  title:"Display Banner Campaign",
+  status:"Pending Buyer Action",
+  requestor:"Kevin Haase",
+  submitted:"06/08/2026",
+  total:"$51,118.75",
+  currency:"USD",
+  approvers:[
+    {name:"Kevin Haase",role:"Requestor",status:"Approved",date:"06/08/2026"},
+    {name:"Buyer Action",role:"Buyer",status:"Pending",date:"\u2014"},
+    {name:"Procurement",role:"Procurement",status:"Waiting",date:"\u2014"}
+  ],
+  lines:[
+    {num:1,desc:"Display Banner",qty:97,price:"$600.00",total:"$58,200.00",supplier:"StarComm",commodity:"Marketing Services"}
+  ],
+  budget:{allocated:"$75,000.00",spent:"$18,500.00",thisReq:"$51,118.75",remaining:"$5,381.25",percent:93},
+  po:null,
+  policy:[{type:"Warning",msg:"Requisition total exceeds $50,000 \u2014 additional procurement review required"}],
+  history:[
+    {date:"06/08/2026 10:30",user:"Kevin Haase",action:"Created requisition"},
+    {date:"06/08/2026 10:31",user:"Kevin Haase",action:"Submitted for approval"},
+    {date:"06/08/2026 10:31",user:"Kevin Haase",action:"Auto-approved (Requestor level)"}
+  ]
+},
+"48878":{
+  id:"REQ-48878",
+  title:"Web Campaign Services",
+  status:"Received",
+  requestor:"Sam Gold",
+  submitted:"06/08/2026",
+  total:"$8,969.62",
+  currency:"USD",
+  approvers:[
+    {name:"Sam Gold",role:"Requestor",status:"Approved",date:"06/08/2026"},
+    {name:"Procurement",role:"Procurement",status:"Approved",date:"06/09/2026"},
+    {name:"Ultimate Approver",role:"Final",status:"Approved",date:"06/10/2026"}
+  ],
+  lines:[
+    {num:1,desc:"Web Campaign",qty:69,price:"$150.00",total:"$10,350.00",supplier:"Voila Marketing Group (USA)",commodity:"Marketing Services"}
+  ],
+  budget:{allocated:"$15,000.00",spent:"$8,969.62",thisReq:"$8,969.62",remaining:"$6,030.38",percent:60},
+  po:{number:"PO-7821",status:"Closed",date:"06/11/2026"},
+  policy:[],
+  history:[
+    {date:"06/08/2026 14:00",user:"Sam Gold",action:"Created requisition"},
+    {date:"06/08/2026 14:01",user:"Sam Gold",action:"Submitted for approval"},
+    {date:"06/08/2026 14:01",user:"Sam Gold",action:"Auto-approved (Requestor level)"},
+    {date:"06/09/2026 09:15",user:"Procurement",action:"Approved"},
+    {date:"06/10/2026 11:30",user:"Ultimate Approver",action:"Final approval granted"},
+    {date:"06/11/2026 08:00",user:"System",action:"PO-7821 generated"},
+    {date:"06/15/2026 16:00",user:"Sam Gold",action:"Goods received"}
+  ]
+}
 };
 
 function getReqData(){
-var d=MOCK_DATA[currentReqId]||MOCK_DATA["default"];
-if(!MOCK_DATA[currentReqId]){d=JSON.parse(JSON.stringify(d));d.id="REQ-"+currentReqId}
+var d=MOCK_DATA[currentReqId];
+if(!d){
+  d={id:"REQ-"+currentReqId,title:"Purchase Requisition",status:"Draft",requestor:"Unknown",submitted:"\u2014",total:"$0.00",currency:"USD",
+  approvers:[{name:"Pending",role:"Approver",status:"Waiting",date:"\u2014"}],
+  lines:[{num:1,desc:"No data available",qty:0,price:"$0.00",total:"$0.00",supplier:"Unknown",commodity:"N/A"}],
+  budget:{allocated:"$0.00",spent:"$0.00",thisReq:"$0.00",remaining:"$0.00",percent:0},
+  po:null,policy:[],
+  history:[{date:"\u2014",user:"System",action:"No history available for this requisition"}]};
+}
 return d;
+}
+
+function getStatusClass(s){
+if(s==="Pending Approval") return "status-pending";
+if(s==="Pending Buyer Action") return "status-buyer";
+if(s==="Approved") return "status-approved";
+if(s==="Received") return "status-received";
+if(s==="Denied") return "status-denied";
+if(s==="Ordered") return "status-ordered";
+return "status-draft";
 }
 
 function updateReqDisplay(){
@@ -351,7 +439,8 @@ document.getElementById("ctx-status").textContent=data.status;
 function initReqChat(){
 document.getElementById("chat-area").innerHTML="";
 var data=getReqData();
-addChatMsg('<div class="msg-label">&#129302; Assistant</div>Hi! &#128075; I\'m your Requisition Assistant for <strong>'+data.id+'</strong> \u2014 "'+data.title+'".<br><br>Current status: <span class="status-pill status-pending">'+data.status+'</span><br>Total: <strong>'+data.total+'</strong><br><br>What would you like to know? Use the quick action buttons below or just type your question!',"bot");
+var sc=getStatusClass(data.status);
+addChatMsg('<div class="msg-label">&#129302; Assistant</div>Hi! &#128075; I\'m your Requisition Assistant for <strong>'+data.id+'</strong> \u2014 "'+data.title+'".<br><br>Requested by: <strong>'+data.requestor+'</strong><br>Current status: <span class="status-pill '+sc+'">'+data.status+'</span><br>Total: <strong>'+data.total+' '+data.currency+'</strong><br>Submitted: '+data.submitted+'<br><br>What would you like to know? Use the quick action buttons below or just type your question!',"bot");
 }
 
 function addChatMsg(text,type){
@@ -416,14 +505,14 @@ return "general";
 function generateResponse(type,d){
 switch(type){
 case "status":
-var sc=d.status==="Pending Approval"?"status-pending":d.status==="Approved"?"status-approved":d.status==="Denied"?"status-denied":d.status==="Ordered"?"status-ordered":"status-draft";
-return '<table><tr><td>Requisition</td><td>'+d.id+'</td></tr><tr><td>Title</td><td>'+d.title+'</td></tr><tr><td>Status</td><td><span class="status-pill '+sc+'">'+d.status+'</span></td></tr><tr><td>Requestor</td><td>'+d.requestor+'</td></tr><tr><td>Department</td><td>'+d.department+'</td></tr><tr><td>Created</td><td>'+d.created+'</td></tr><tr><td>Total</td><td><strong>'+d.total+'</strong></td></tr></table>';
+var sc=getStatusClass(d.status);
+return '<table><tr><td>Requisition</td><td>'+d.id+'</td></tr><tr><td>Title</td><td>'+d.title+'</td></tr><tr><td>Status</td><td><span class="status-pill '+sc+'">'+d.status+'</span></td></tr><tr><td>Requestor</td><td>'+d.requestor+'</td></tr><tr><td>Submitted</td><td>'+d.submitted+'</td></tr><tr><td>Total</td><td><strong>'+d.total+' '+d.currency+'</strong></td></tr></table>';
 case "approval":
 var html='<strong>Approval Chain for '+d.id+'</strong><br><br>';
-d.approvers.forEach(function(a){
+d.approvers.forEach(function(a,i){
 var icon=a.status==="Approved"?"&#9989;":a.status==="Pending"?"&#9203;":"&#9898;";
 var sc=a.status==="Approved"?"status-approved":a.status==="Pending"?"status-pending":"status-draft";
-html+='<div style="display:flex;align-items:center;gap:8px;padding:4px 0">'+icon+' <strong>'+a.name+'</strong> <span class="status-pill '+sc+'">'+a.status+'</span> <span style="color:#6B778C;font-size:11px;margin-left:auto">'+a.date+'</span></div>';
+html+='<div style="display:flex;align-items:center;gap:8px;padding:6px 0;'+(i<d.approvers.length-1?'border-bottom:1px solid #E2E4E9':'')+'">'+icon+' <div><strong>'+a.name+'</strong><div style="font-size:10px;color:#6B778C">'+a.role+'</div></div><span class="status-pill '+sc+'" style="margin-left:auto">'+a.status+'</span> <span style="color:#6B778C;font-size:11px;min-width:75px;text-align:right">'+a.date+'</span></div>';
 });
 return html;
 case "budget":
@@ -433,21 +522,24 @@ return '<strong>Budget Analysis</strong><table><tr><td>Allocated</td><td>'+d.bud
 case "lines":
 var html='<strong>'+d.lines.length+' Line Item'+(d.lines.length>1?"s":"")+'</strong><br>';
 d.lines.forEach(function(l){
-html+='<div style="background:#fff;border:1px solid #E2E4E9;border-radius:6px;padding:8px;margin:6px 0"><div style="font-weight:600;font-size:12px">Line '+l.num+': '+l.desc+'</div><table><tr><td>Qty</td><td>'+l.qty+'</td></tr><tr><td>Unit Price</td><td>'+l.price+'</td></tr><tr><td>Supplier</td><td>'+l.supplier+'</td></tr><tr><td>Commodity</td><td>'+l.commodity+'</td></tr></table></div>';
+html+='<div style="background:#fff;border:1px solid #E2E4E9;border-radius:6px;padding:8px;margin:6px 0"><div style="font-weight:600;font-size:12px">Line '+l.num+': '+l.desc+'</div><table><tr><td>Qty</td><td>'+l.qty+'</td></tr><tr><td>Unit Price</td><td>'+l.price+'</td></tr><tr><td>Line Total</td><td><strong>'+l.total+'</strong></td></tr><tr><td>Supplier</td><td>'+l.supplier+'</td></tr><tr><td>Commodity</td><td>'+l.commodity+'</td></tr></table></div>';
 });
+html+='<div style="margin-top:6px;text-align:right;font-weight:700;font-size:13px">Requisition Total: '+d.total+'</div>';
 return html;
 case "supplier":
 var suppliers={};
 d.lines.forEach(function(l){suppliers[l.supplier]=suppliers[l.supplier]||[];suppliers[l.supplier].push(l)});
 var html='<strong>Suppliers on '+d.id+'</strong><br>';
 Object.keys(suppliers).forEach(function(s){
-html+='<div style="margin:6px 0;padding:8px;background:#fff;border:1px solid #E2E4E9;border-radius:6px"><div style="font-weight:600">&#127970; '+s+'</div><div style="font-size:11px;color:#6B778C">'+suppliers[s].length+' line item'+(suppliers[s].length>1?"s":"")+'</div></div>';
+var items=suppliers[s];
+var subtotal=items.map(function(i){return i.total}).join(" + ");
+html+='<div style="margin:6px 0;padding:8px;background:#fff;border:1px solid #E2E4E9;border-radius:6px"><div style="font-weight:600">&#127970; '+s+'</div><div style="font-size:11px;color:#6B778C">'+items.length+' line item'+(items.length>1?"s":"")+' \u2014 '+subtotal+'</div></div>';
 });
 return html;
 case "po":
-if(d.po){return '<strong>Purchase Order</strong><table><tr><td>PO Number</td><td>'+d.po.number+'</td></tr><tr><td>Status</td><td>'+d.po.status+'</td></tr><tr><td>Created</td><td>'+d.po.date+'</td></tr></table>'}
+if(d.po){return '<strong>Purchase Order</strong><table><tr><td>PO Number</td><td><strong>'+d.po.number+'</strong></td></tr><tr><td>Status</td><td><span class="status-pill '+(d.po.status==="Closed"?"status-approved":"status-ordered")+'">'+d.po.status+'</span></td></tr><tr><td>Created</td><td>'+d.po.date+'</td></tr></table>'}
 var pendingApprover=d.approvers.filter(function(a){return a.status==="Pending"});
-return '&#128196; No Purchase Order has been generated yet for <strong>'+d.id+'</strong>.<br><br>A PO will be created automatically once all approvals are complete'+(d.status==="Pending Approval"&&pendingApprover.length?'. Currently waiting for <strong>'+pendingApprover[0].name+'</strong> to approve.':'.')+'.';
+return '&#128196; No Purchase Order has been generated yet for <strong>'+d.id+'</strong>.<br><br>A PO will be created automatically once all approvals are complete'+(pendingApprover.length?'. Currently waiting for <strong>'+pendingApprover[0].name+'</strong>.':".")+' ';
 case "policy":
 if(d.policy.length===0) return '&#9989; <strong>No policy violations</strong> detected on '+d.id+'. Everything looks compliant!';
 var html='&#9888;&#65039; <strong>'+d.policy.length+' Policy Issue'+(d.policy.length>1?"s":"")+'</strong><br>';
@@ -455,14 +547,15 @@ d.policy.forEach(function(p){html+='<div style="margin:6px 0;padding:8px;backgro
 return html;
 case "history":
 var html='<strong>Change History</strong><br>';
-d.history.forEach(function(h){html+='<div style="display:flex;gap:8px;padding:4px 0;border-bottom:1px solid #F4F5F7;font-size:12px"><span style="color:#6B778C;white-space:nowrap;min-width:110px">'+h.date+'</span><span><strong>'+h.user+'</strong> '+h.action+'</span></div>'});
+d.history.forEach(function(h){html+='<div style="display:flex;gap:8px;padding:4px 0;border-bottom:1px solid #F4F5F7;font-size:12px"><span style="color:#6B778C;white-space:nowrap;min-width:120px">'+h.date+'</span><span><strong>'+h.user+'</strong> '+h.action+'</span></div>'});
 return html;
 case "total":
-return '<strong>Financial Summary</strong><table><tr><td>Subtotal</td><td>'+d.total+'</td></tr><tr><td>Currency</td><td>'+d.currency+'</td></tr><tr><td>Lines</td><td>'+d.lines.length+'</td></tr></table>';
+return '<strong>Financial Summary</strong><table><tr><td>Subtotal</td><td>'+d.total+'</td></tr><tr><td>Currency</td><td>'+d.currency+'</td></tr><tr><td>Line Items</td><td>'+d.lines.length+'</td></tr></table>';
 case "help":
 return 'I can help you with:<br><br>&#128203; <strong>Status</strong> \u2014 Current requisition state<br>&#9989; <strong>Approvals</strong> \u2014 Who needs to approve & progress<br>&#128176; <strong>Budget</strong> \u2014 Budget impact analysis<br>&#128230; <strong>Line Items</strong> \u2014 What\'s being ordered<br>&#127970; <strong>Suppliers</strong> \u2014 Vendor details<br>&#128196; <strong>PO Status</strong> \u2014 Purchase order tracking<br>&#128220; <strong>Policy</strong> \u2014 Compliance check<br>&#128337; <strong>History</strong> \u2014 Change log<br><br>Just ask in English or German!';
 default:
-return 'Here\'s a quick overview of <strong>'+d.id+'</strong>:<br><br>Status: <span class="status-pill status-pending">'+d.status+'</span><br>Total: <strong>'+d.total+'</strong><br>Lines: '+d.lines.length+'<br><br>Try the quick buttons or ask me something specific like <em>"Who still needs to approve?"</em> or <em>"What are the line items?"</em>';
+var sc=getStatusClass(d.status);
+return 'Here\'s a quick overview of <strong>'+d.id+'</strong>:<br><br>Requested by: <strong>'+d.requestor+'</strong><br>Status: <span class="status-pill '+sc+'">'+d.status+'</span><br>Total: <strong>'+d.total+' '+d.currency+'</strong><br>Lines: '+d.lines.length+'<br><br>Try the quick buttons or ask me something specific like <em>"Who still needs to approve?"</em> or <em>"What are the line items?"</em>';
 }
 }
 
@@ -495,17 +588,6 @@ postToParent("init");
 postToParent("ready");
 postToParent("listenToDataLocation");
 setInterval(function(){postToParent("getPageContext")},3000);
-
-/* ── Data Sniffer: Try all known Coupa iFrame API actions ── */
-setTimeout(function(){
-var sniffActions=[
-"getDocumentContext","getFieldValues","getFormData","getData",
-"getPageData","getLineItems","getRequisitionData","getObjectData",
-"readData","getDetails","getRecordData","getHeaderData"
-];
-debugLog("SNIFF","Trying "+sniffActions.length+" Coupa API actions...");
-sniffActions.forEach(function(a){postToParent(a)});
-},3000);
 </script>
 </body>
 </html>
