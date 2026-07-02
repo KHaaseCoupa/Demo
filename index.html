@@ -347,7 +347,7 @@ document.getElementById("ctx-status").textContent=data.status;
 function initReqChat(){
 document.getElementById("chat-area").innerHTML="";
 var data=getReqData();
-addChatMsg('<div class="msg-label">&#129302; Assistant</div>Hi Kevin! &#128075; I\'m your Requisition Assistant for <strong>'+data.id+'</strong> \u2014 "'+data.title+'".<br><br>Current status: <span class="status-pill status-pending">'+data.status+'</span><br>Total: <strong>'+data.total+'</strong><br><br>What would you like to know? Use the quick buttons or just ask me anything!',"bot");
+addChatMsg('<div class="msg-label">&#129302; Assistant</div>Hi! &#128075; I\'m your Requisition Assistant for <strong>'+data.id+'</strong> \u2014 "'+data.title+'".<br><br>Current status: <span class="status-pill status-pending">'+data.status+'</span><br>Total: <strong>'+data.total+'</strong><br><br>What would you like to know? Use the quick action buttons below or just type your question!',"bot");
 }
 
 function addChatMsg(text,type){
@@ -489,17 +489,6 @@ postToParent("init");
 postToParent("ready");
 postToParent("listenToDataLocation");
 setInterval(function(){postToParent("getPageContext")},3000);
-
-/* Demo Fallback */
-setTimeout(function(){
-if(!activeWidget){
-debugLog("DEMO","No page match after 5s - DEMO MODE (REQ)");
-currentReqId="48903";
-updateReqDisplay();
-initReqChat();
-showReqWidget();
-}
-},5000);
 </script>
 </body>
 </html>
