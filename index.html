@@ -468,7 +468,14 @@ window.addEventListener("message",function(event){
 var raw=event.data;
 if(typeof raw==="string"){try{raw=JSON.parse(raw)}catch(e){return}}
 if(!raw||typeof raw!=="object") return;
+
+// FULL PAYLOAD DUMP
+try{
+debugLog("RECV","FULL PAYLOAD: "+JSON.stringify(raw).substring(0,500));
+}catch(e){
 debugLog("RECV","Action: "+(raw.action||"none")+" Keys: "+Object.keys(raw).join(","));
+}
+
 var url=extractUrl(raw);
 if(url){debugLog("RECV","URL found: "+url);handlePageContext(url)}
 if(raw.action==="locationGone"){hideAll()}
